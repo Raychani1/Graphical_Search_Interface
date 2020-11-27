@@ -1,4 +1,3 @@
-// SOURCE : https://www.youtube.com/watch?v=yyHhloFMNNA&list=PLjxrf2q8roU3ahJVrSgAnPjzkpGmL9Czl&index=37
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -20,7 +19,7 @@ class MyApp extends StatelessWidget {
     ]);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Graphical Search in Time Series',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -53,9 +52,11 @@ class _MyHomePageState extends State<MyHomePage> {
           });
         },
         onPanUpdate: (details) {
-          setState(() {
-            _offsets.add(details.localPosition);
-          });
+          if(details.localPosition.dx >= _offsets.last.dx) {
+            setState(() {
+              _offsets.add(details.localPosition);
+            });
+          }
         },
         onPanEnd: (details) {
           setState(() {
