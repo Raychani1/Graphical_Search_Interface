@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_sparkline/flutter_sparkline.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'painter.dart';
@@ -16,6 +15,9 @@ void main() {
 bool toolbarOpen = false;
 bool drawingMode = true;
 bool finished = false;
+var mediaQuery;
+var appHeight;
+var appWidth;
 
 class MyApp extends StatelessWidget {
   @override
@@ -45,6 +47,31 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+List<Offset> generateData(
+    List<Offset> _offsets, double appWidth, double appHeight) {
+  List<Offset> result = <Offset>[];
+
+  if (_offsets.isNotEmpty) {
+    Random random = new Random();
+
+    for (int i = 0; i < appWidth; i += 4) {
+      if (i < _offsets[0].dx.floor() || i > _offsets.last.dx.floor()) {
+        result.add(new Offset(
+            i.toDouble(), (random.nextInt(appHeight.floor()) + 1).toDouble()));
+      } else {
+        for (int j = 0; j < _offsets.length; j++, i++) {
+
+          result.add(new Offset(
+              _offsets[j].dx , (_offsets[j].dy + random.nextInt(21) - 10)));
+        }
+      }
+    }
+  }
+  return result;
+}
+
+
+
 class _MyHomePageState extends State<MyHomePage> {
   var _offsets = <Offset>[];
 
@@ -72,34 +99,6 @@ class _MyHomePageState extends State<MyHomePage> {
         (((next.dy - last.dy).abs() >= 0) &&
             ((next.dy - last.dy).abs() <= 20)));
   }
-
-  List<double> generateData(double appWidth, double appHeight) {
-    List<double> result = [];
-    if (_offsets.isNotEmpty) {
-      Random random = new Random();
-
-      for (int i = 0; i < appWidth; i++) {
-        if (i < _offsets[0].dx.floor() || i > _offsets.last.dx.floor()) {
-          result.add((random.nextInt(appHeight.floor())+ 1).toDouble());
-        } else {
-          for (int j = 0; j < _offsets.length; j++) {
-            result.add(
-                ((-_offsets[j].dy.floor()+appHeight) + random.nextInt(21) - 10).toDouble());
-            i++;
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  List<double> readServerResponse(String jsonString){
-    Map<String,dynamic> data = jsonDecode(jsonString);
-    print(data);
-    return null;
-  }
-
-  //
 
   @override
   Widget build(BuildContext context) {
@@ -232,15 +231,21 @@ class _MyHomePageState extends State<MyHomePage> {
     var mediaQuery = MediaQuery.of(context);
     var appHeight = mediaQuery.size.height - appBar.preferredSize.height;
     var appWidth = mediaQuery.size.width;
-    print(appHeight);
 
-    List<double> data = generateData(appWidth, appHeight);
-//    String json =
-//    List<double> data = readServerResponse("json/server_response.json");
+    var _searchResult = generateData(_offsets, appWidth, appHeight);
+
     return Scaffold(
       appBar: appBar,
       body: Stack(children: [
-        finished && _offsets.isNotEmpty ? chart(data) : Container(),
+        finished && _offsets.isNotEmpty
+            ? Container(
+                child: CustomPaint(
+                    painter: Painter(_searchResult, Color(0xffee6f57), 2.0),
+                    child: Container(
+                      height: MediaQuery.of(context).size.height,
+                      width: MediaQuery.of(context).size.width,
+                    )))
+            : Container(),
         GestureDetector(
           onPanDown: (details) {
             if (_offsets.isNotEmpty) {
@@ -272,11 +277,11 @@ class _MyHomePageState extends State<MyHomePage> {
             setState(() {
               finished = true;
             });
-            print(data);
+//            print(_searchResult);
           },
           child: Center(
             child: CustomPaint(
-              painter: Painter(_offsets),
+              painter: Painter(_offsets, Color(0xff1f3c88), 5.0),
               child: Container(
                 height: MediaQuery.of(context).size.height,
                 width: MediaQuery.of(context).size.width,
@@ -289,16 +294,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-Material chart(data) {
-  return Material(
-    color: Colors.white,
-    child: Center(
-      child: new Sparkline(
-        data: data,
-        lineColor: Color(0xffee6f57),
-        pointsMode: PointsMode.none,
-        pointSize: 8.0,
-      ),
-    ),
-  );
-}
+//Material chart(data) {
+//  return Material(
+//    color: Colors.white,
+//    child: Center(
+//      child: new Sparkline(
+//        data: data,
+//        lineColor: Color(0xffee6f57),
+//        pointsMode: PointsMode.none,
+//        pointSize: 8.0,
+//      ),
+//    ),
+//  );
+//}
